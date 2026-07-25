@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bizim Hikayemiz 💕</title>
+    <script>
+      // GitHub Pages SPA 404 fallback — ana sayfaya yönlendir
+      (function () {
+        var basePath = "/";
+        var search = window.location.search || "";
+        var pathParts = window.location.pathname.split("/");
+        var repoName = pathParts[1] || "";
+        // Alt path olarak /kands/ veya benzeri repo adı varsa basePath'i ayarla
+        if (repoName && repoName.length < 40) {
+          basePath = "/" + repoName + "/";
+        }
+        var hash = window.location.hash;
+        var redirect = basePath + "?p=/" +
+          pathParts.slice(basePath === "/" ? 1 : 2).join("/") +
+          (search ? "&" + search.slice(1) : "") +
+          hash;
+        window.location.replace(redirect);
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Yönlendiriliyorsunuz...</p>
+  </body>
+</html>
