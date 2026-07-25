@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: #581c2e;
+  background: linear-gradient(135deg, #fff1f3 0%, #fef6f4 25%, #faf5ff 50%, #fff3e3 75%, #fff1f3 100%);
+  background-attachment: fixed;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark {
+  color: #fde0e8;
+  color-scheme: dark;
+  background: linear-gradient(135deg, #190b2b 0%, #201034 25%, #2a1740 50%, #190b2b 75%, #0c0418 100%);
+  background-attachment: fixed;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-md
+           border border-white/80
+           shadow-xl shadow-rose-100/50
+           rounded-3xl transition-colors duration-500;
+  }
+
+  .dark .glass-card {
+    background-color: rgba(42, 23, 64, 0.6);
+    border-color: rgba(124, 58, 237, 0.5);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  }
+
+  .romantic-shadow {
+    box-shadow: 0 10px 40px -10px rgba(249, 61, 107, 0.2),
+                0 4px 20px -5px rgba(168, 85, 247, 0.15);
+  }
+
+  .dark .romantic-shadow {
+    box-shadow: 0 10px 40px -10px rgba(249, 61, 107, 0.35),
+                0 4px 25px -5px rgba(168, 85, 247, 0.3);
+  }
+
+  .heart-shape {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+
+  .heart-shape::before,
+  .heart-shape::after {
+    content: "";
+    position: absolute;
+    width: 52%;
+    height: 80%;
+    background: currentColor;
+    border-radius: 50% 50% 0 0;
+  }
+
+  .heart-shape::before {
+    left: 50%;
+    transform: translateX(-100%) rotate(-45deg);
+    transform-origin: 100% 100%;
+  }
+
+  .heart-shape::after {
+    left: 50%;
+    transform: rotate(45deg);
+    transform-origin: 0 100%;
+  }
+
+  .section-title {
+    @apply font-display text-3xl md:text-4xl lg:text-5xl font-semibold
+           text-rose-700
+           mb-2 text-center;
+  }
+
+  .dark .section-title {
+    color: #fecdd3;
+  }
+
+  .section-subtitle {
+    @apply font-script text-xl md:text-2xl
+           text-blush-500
+           mb-12 text-center;
+  }
+
+  .dark .section-subtitle {
+    color: #d8b4fe;
+  }
+
+  .timeline-line {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #ffc7d1, #d8b4fe, #ffc7d1);
+    border-radius: 4px;
+  }
+
+  .dark .timeline-line {
+    background: linear-gradient(180deg, #f93d6b, #a855f7, #f93d6b);
+  }
+
+  @media (max-width: 768px) {
+    .timeline-line {
+      left: 20px;
+      transform: translateX(0);
+    }
+  }
+
+  .gallery-item {
+    @apply overflow-hidden rounded-2xl romantic-shadow transition-all duration-500 cursor-pointer;
+  }
+
+  .gallery-item:hover {
+    @apply scale-105;
+  }
+
+  .gallery-item img {
+    @apply w-full h-full object-cover transition-transform duration-700;
+  }
+
+  .gallery-item:hover img {
+    @apply scale-110;
+  }
+
+  .btn-romantic {
+    @apply relative px-8 py-3 font-display font-semibold rounded-full text-white
+           bg-gradient-to-r from-rose-400 via-blush-400 to-lavender-400
+           shadow-lg shadow-rose-200
+           hover:shadow-xl hover:shadow-rose-300
+           transition-all duration-300 hover:scale-105 active:scale-95
+           overflow-hidden;
+  }
+
+  .dark .btn-romantic {
+    box-shadow: 0 10px 15px -3px rgba(136, 19, 55, 0.4), 0 4px 6px -4px rgba(136, 19, 55, 0.4);
+  }
+
+  .dark .btn-romantic:hover {
+    box-shadow: 0 20px 25px -5px rgba(244, 63, 94, 0.4), 0 8px 10px -6px rgba(244, 63, 94, 0.4);
+  }
+
+  .btn-romantic::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  .btn-romantic:hover::before {
+    transform: translateX(100%);
+  }
+
+  .btn-outline-romantic {
+    @apply px-8 py-3 font-display font-semibold rounded-full border-2
+           border-rose-300
+           text-rose-600
+           bg-white/50 backdrop-blur-sm
+           hover:bg-rose-50 hover:border-rose-400
+           transition-all duration-300 hover:scale-105 active:scale-95;
+  }
+
+  .dark .btn-outline-romantic {
+    border-color: rgba(251, 113, 133, 0.7);
+    color: #fecdd3;
+    background-color: rgba(32, 16, 52, 0.5);
+  }
+
+  .dark .btn-outline-romantic:hover {
+    background-color: rgba(42, 23, 64, 0.8);
+    border-color: #fda4af;
+  }
+
+  .counter-card {
+    @apply glass-card px-4 py-6 md:px-8 md:py-8 text-center min-w-[90px] md:min-w-[120px]
+           transition-all duration-300 hover:scale-105 hover:-translate-y-1;
+  }
+
+  .counter-number {
+    @apply font-display text-3xl md:text-5xl font-bold bg-gradient-to-r
+           from-rose-500 via-blush-500 to-lavender-500 bg-clip-text text-transparent
+           animate-pulse-soft;
+  }
+
+  .dark .counter-number {
+    background-image: linear-gradient(to right, #fecdd3, #ffe4e6, #e9d5ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .counter-label {
+    @apply font-body text-xs md:text-sm
+           text-blush-600
+           mt-2 uppercase tracking-widest font-medium;
+  }
+
+  .dark .counter-label {
+    color: rgba(233, 213, 255, 0.9);
+  }
+
+  .photo-upload-zone {
+    @apply relative w-full aspect-square rounded-3xl border-2 border-dashed
+           border-rose-200
+           bg-gradient-to-br from-rose-50/50 to-lavender-50/50
+           hover:border-rose-400 hover:from-rose-50 hover:to-lavender-50
+           transition-all duration-300 cursor-pointer overflow-hidden;
+  }
+
+  .dark .photo-upload-zone {
+    border-color: rgba(147, 51, 234, 0.6);
+    background-image: linear-gradient(to bottom right, rgba(42, 23, 64, 0.6), rgba(32, 16, 52, 0.6));
+  }
+
+  .dark .photo-upload-zone:hover {
+    border-color: #c084fc;
+    background-image: linear-gradient(to bottom right, rgba(58, 33, 80, 0.7), rgba(42, 23, 64, 0.7));
+  }
+
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  }
+
+  .reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .text-gradient-romantic {
+    @apply bg-gradient-to-r from-rose-500 via-blush-500 to-lavender-500 bg-clip-text text-transparent;
+  }
+
+  .dark .text-gradient-romantic {
+    background-image: linear-gradient(to right, #fecdd3, #ffe4e6, #e9d5ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* ---------- Night sky stars (only visible in dark mode) ---------- */
+html.dark body::before,
+html.dark body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-repeat: repeat;
+  opacity: 0.55;
+}
+
+html.dark body::before {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 80px 120px, #ffc7d1, transparent),
+    radial-gradient(1px 1px at 160px 60px, #d8b4fe, transparent),
+    radial-gradient(1.5px 1.5px at 240px 200px, #fff, transparent),
+    radial-gradient(1px 1px at 320px 90px, #ffa0b3, transparent),
+    radial-gradient(1.5px 1.5px at 120px 260px, #fff, transparent),
+    radial-gradient(1px 1px at 40px 350px, #e9d5ff, transparent);
+  background-size: 400px 400px;
+  animation: starDrift 120s linear infinite;
+}
+
+html.dark body::after {
+  background-image:
+    radial-gradient(1px 1px at 50px 90px, #fff, transparent),
+    radial-gradient(2px 2px at 200px 50px, #ff6b8a, transparent),
+    radial-gradient(1px 1px at 300px 180px, #c084fc, transparent),
+    radial-gradient(1px 1px at 100px 280px, #fff, transparent);
+  background-size: 350px 350px;
+  animation: starDrift 200s linear infinite reverse;
+  opacity: 0.7;
+}
+
+@keyframes starDrift {
+  from { background-position: 0 0; }
+  to   { background-position: 400px 400px; }
+}
+
+html.dark header:not(.scrolled) {
+  background: linear-gradient(180deg, rgba(12, 4, 24, 0.7), transparent);
+}
+
+html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) hue-rotate(-20deg) saturate(1.5);
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+  background-color: #201034;
+  color: #ffe4e6;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fff1f3;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #120721;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ffa0b3, #d8b4fe);
+  border-radius: 5px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #f93d6b, #9333ea);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff6b8a, #c084fc);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff6b8a, #c084fc);
+}
