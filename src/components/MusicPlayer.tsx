@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Music2, SkipForward, SkipBack, Volume2, VolumeX, ExternalLink } from "lucide-react";
 import { siteConfig } from "@/config";
+import { useLanguage } from "@/i18n";
 
 function formatTime(sec: number): string {
   if (!isFinite(sec) || isNaN(sec) || sec < 0) return "0:00";
@@ -9,8 +10,87 @@ function formatTime(sec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+const uiLabels: Record<string, {
+  loadError: string;
+  autoplayError: string;
+  youtubeBadge: string;
+  nowPlaying: string;
+  waiting: string;
+  muteOn: string;
+  muteOff: string;
+  skipBack: string;
+  skipFwd: string;
+  pause: string;
+  play: string;
+  youtubeOpen: string;
+  coverAlt: string;
+}> = {
+  tr: {
+    loadError: "Şarkı şu an yüklenemedi. Lütfen config.ts'deki audioUrl adresini kontrol edin veya kendi şarkı dosyanızı yükleyin.",
+    autoplayError: "Tarayıcı otomatik oynatmayı engelledi, lütfen butona tekrar basın.",
+    youtubeBadge: "YouTube'da dinle 🎬",
+    nowPlaying: "Şimdi çalıyor 🎶",
+    waiting: "Seni bekliyor 💕",
+    muteOn: "Sesi aç",
+    muteOff: "Sesi kapat",
+    skipBack: "10 sn geri",
+    skipFwd: "10 sn ileri",
+    pause: "Duraklat",
+    play: "Oynat",
+    youtubeOpen: "YouTube'da aç",
+    coverAlt: "albüm kapağı",
+  },
+  ru: {
+    loadError: "Песня сейчас не может быть загружена. Пожалуйста, проверь адрес audioUrl в config.ts или загрузи свой файл песни.",
+    autoplayError: "Браузер заблокировал автопроигрывание, пожалуйста, нажми кнопку ещё раз.",
+    youtubeBadge: "Слушать на YouTube 🎬",
+    nowPlaying: "Играет сейчас 🎶",
+    waiting: "Ждёт тебя 💕",
+    muteOn: "Включить звук",
+    muteOff: "Выключить звук",
+    skipBack: "10 сек назад",
+    skipFwd: "10 сек вперёд",
+    pause: "Пауза",
+    play: "Играть",
+    youtubeOpen: "Открыть на YouTube",
+    coverAlt: "обложка альбома",
+  },
+  en: {
+    loadError: "Song cannot be loaded right now. Please check the audioUrl address in config.ts or upload your own song file.",
+    autoplayError: "Browser blocked autoplay, please press the button again.",
+    youtubeBadge: "Listen on YouTube 🎬",
+    nowPlaying: "Now playing 🎶",
+    waiting: "Waiting for you 💕",
+    muteOn: "Unmute",
+    muteOff: "Mute",
+    skipBack: "10 sec back",
+    skipFwd: "10 sec forward",
+    pause: "Pause",
+    play: "Play",
+    youtubeOpen: "Open on YouTube",
+    coverAlt: "album cover",
+  },
+  ro: {
+    loadError: "Cântecul nu poate fi încărcat acum. Te rog, verifică adresa audioUrl din config.ts sau încarcă propriul fișier cu cântec.",
+    autoplayError: "Browserul a blocat redarea automată, te rog apasă butonul din nou.",
+    youtubeBadge: "Ascultă pe YouTube 🎬",
+    nowPlaying: "Redă acum 🎶",
+    waiting: "Te așteaptă 💕",
+    muteOn: "Porneste sunetul",
+    muteOff: "Opreste sunetul",
+    skipBack: "10 sec înapoi",
+    skipFwd: "10 sec înainte",
+    pause: "Pauză",
+    play: "Redă",
+    youtubeOpen: "Deschide pe YouTube",
+    coverAlt: "copertă album",
+  },
+};
+
 export default function MusicPlayer() {
   const song = siteConfig.ourSong;
+  const { t, lang } = useLanguage();
+  const labels = uiLabels[lang] ?? uiLabels.en;
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
@@ -37,9 +117,7 @@ export default function MusicPlayer() {
     };
     const onEnded = () => setIsPlaying(false);
     const onError = () => {
-      setLoadError(
-        "Şarkı şu an yüklenemedi. Lütfen config.ts'deki audioUrl adresini kontrol edin veya kendi şarkı dosyanızı yükleyin."
-      );
+      setLoadError(labels.loadError);
       setIsPlaying(false);
     };
 
@@ -69,7 +147,7 @@ export default function MusicPlayer() {
         setIsPlaying(false);
       }
     } catch (err) {
-      setLoadError("Tarayıcı otomatik oynatmayı engelledi, lütfen butona tekrar basın.");
+      setLoadError(labels.autoplayError);
       setIsPlaying(false);
     }
   };
@@ -115,8 +193,8 @@ export default function MusicPlayer() {
             <Music2 className="w-6 h-6 text-lavender-500 dark:text-lavender-300 animate-float" />
             <div className="w-12 h-[2px] bg-gradient-to-l from-transparent to-lavender-300 dark:to-lavender-500/70" />
           </div>
-          <h2 className="section-title">{song.sectionTitle}</h2>
-          <p className="section-subtitle">{song.sectionSubtitle}</p>
+          <h2 className="section-title">{t("song.sectionTitle")}</h2>
+          <p className="section-subtitle">{t("song.sectionSubtitle")}</p>
         </div>
 
         <div className="max-w-3xl mx-auto">
@@ -133,7 +211,7 @@ export default function MusicPlayer() {
                 >
                   <img
                     src={song.coverUrl}
-                    alt={`${song.title} albüm kapağı`}
+                    alt={`${song.title} ${labels.coverAlt}`}
                     className="w-full h-full object-cover"
                     draggable={false}
                     onError={(e) => {
@@ -161,7 +239,7 @@ export default function MusicPlayer() {
                   <div className="min-w-0">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100/80 dark:bg-rose-500/20 text-rose-600 dark:text-rose-100 text-xs font-medium mb-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 dark:bg-rose-200 animate-pulse" />
-                      {useYouTube ? "YouTube'da dinle 🎬" : isPlaying ? "Şimdi çalıyor 🎶" : "Seni bekliyor 💕"}
+                      {useYouTube ? labels.youtubeBadge : isPlaying ? labels.nowPlaying : labels.waiting}
                     </div>
                     <h3 className="font-display text-xl md:text-2xl font-semibold text-rose-700 dark:text-rose-100 truncate">
                       {song.title}
@@ -180,7 +258,7 @@ export default function MusicPlayer() {
                         setIsMuted(audio.muted);
                       }}
                       className="shrink-0 w-9 h-9 rounded-full bg-white/60 dark:bg-midnight-200/60 hover:bg-white dark:hover:bg-midnight-100/90 text-blush-600 dark:text-lavender-200 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                      title={isMuted ? "Sesi aç" : "Sesi kapat"}
+                      title={isMuted ? labels.muteOn : labels.muteOff}
                     >
                       {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                     </button>
@@ -206,7 +284,7 @@ export default function MusicPlayer() {
                         className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-lavender-600 dark:text-lavender-200 hover:text-rose-600 dark:hover:text-rose-200 transition-colors"
                       >
                         <ExternalLink className="w-4 h-4" />
-                        YouTube'da aç
+                        {labels.youtubeOpen}
                       </a>
                     )}
                   </div>
@@ -238,7 +316,7 @@ export default function MusicPlayer() {
                       <button
                         onClick={() => skip(-10)}
                         className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 dark:bg-midnight-200/60 hover:bg-white dark:hover:bg-midnight-100/90 text-rose-600 dark:text-rose-100 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                        title="10 sn geri"
+                        title={labels.skipBack}
                       >
                         <SkipBack className="w-5 h-5" />
                       </button>
@@ -246,7 +324,7 @@ export default function MusicPlayer() {
                       <button
                         onClick={togglePlay}
                         className="relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white shadow-xl shadow-rose-300/50 dark:shadow-rose-500/40 hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden bg-gradient-to-r from-rose-400 via-blush-400 to-lavender-400"
-                        title={isPlaying ? "Duraklat" : "Oynat"}
+                        title={isPlaying ? labels.pause : labels.play}
                       >
                         <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
                         {isPlaying ? <Pause className="w-6 h-6 md:w-7 md:h-7" /> : <Play className="w-6 h-6 md:w-7 md:h-7 ml-0.5" />}
@@ -255,7 +333,7 @@ export default function MusicPlayer() {
                       <button
                         onClick={() => skip(10)}
                         className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 dark:bg-midnight-200/60 hover:bg-white dark:hover:bg-midnight-100/90 text-rose-600 dark:text-rose-100 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                        title="10 sn ileri"
+                        title={labels.skipFwd}
                       >
                         <SkipForward className="w-5 h-5" />
                       </button>
@@ -264,7 +342,7 @@ export default function MusicPlayer() {
                 )}
 
                 <p className="mt-5 text-center font-script text-base md:text-lg text-lavender-500 dark:text-lavender-200/90">
-                  {song.smallNote}
+                  {t("song.note")}
                 </p>
 
                 {loadError && (

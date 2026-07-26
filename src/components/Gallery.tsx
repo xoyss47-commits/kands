@@ -1,9 +1,12 @@
-import { useRef, useState, useEffect, useCallback } from "react";
-import { Images, Plus, X, ChevronLeft, ChevronRight, Camera, RotateCcw, Info, Save } from "lucide-react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { Images, Plus, X, ChevronLeft, ChevronRight, Camera, RotateCcw, Info, Save, HardDrive } from "lucide-react";
 import { siteConfig, type GalleryImage } from "@/config";
+import { compressImage, formatBytes, localStorageUsedBytes } from "@/lib/compressImage";
+import { useLanguage } from "@/i18n";
 
 const GALLERY_KEY = "kands_gallery_images_v1";
 const AUTOSAVE_INTERVAL_MS = 30_000;
+const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 
 function loadGallery(): GalleryImage[] {
   try {
@@ -17,31 +20,38 @@ function loadGallery(): GalleryImage[] {
   }
 }
 
-function readFileAsDataURL(file: File): Promise<GalleryImage> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      resolve({
-        src: ev.target?.result as string,
-        caption: "Yeni anımız 💕",
-      });
-    };
-    reader.onerror = () => reject(new Error("Dosya okunamadı"));
-    reader.readAsDataURL(file);
+async function readAndCompressFile(file: File): Promise<GalleryImage> {
+  const src = await compressImage(file, {
+    maxWidth: 1600,
+    maxHeight: 1600,
+    quality: 0.82,
+    type: "image/jpeg",
   });
+  return {
+    src,
+    caption: "Yeni anımız 💕",
+  };
 }
 
 export default function Gallery() {
+  const { t, locale } = useLanguage();
   const [images, setImages] = useState<GalleryImage[]>(() => loadGallery());
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [storageWarn, setStorageWarn] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const imagesRef = useRef<GalleryImage[]>(images);
 
   useEffect(() => {
     imagesRef.current = images;
   }, [images]);
+
+  const galleryBytes = useMemo(() => {
+    return JSON.stringify(images).length * 2;
+  }, [images]);
+  const totalUsedBytes = useMemo(() => localStorageUsedBytes(), [images, savedAt, storageWarn]);
+  const usedPct = Math.min(100, Math.round((totalUsedBytes / STORAGE_LIMIT_BYTES) * 100));
 
   const persist = useCallback((data: GalleryImage[]) => {
     try {
@@ -51,15 +61,14 @@ export default function Gallery() {
       return true;
     } catch (err) {
       if (err instanceof DOMException && (err.name === "QuotaExceededError" || err.code === 22)) {
-        setStorageWarn(
-          "Fotoğraflar çok büyük olduğu için tarayıcı kaydedemiyor. Daha küçük boyutlu fotoğraflar veya daha az sayıda fotoğraf kullanmayı dene."
-        );
+        const estTotal = JSON.stringify(data).length * 2;
+        setStorageWarn(t("gallery.storageErrorQuota", { size: formatBytes(estTotal) }));
       } else {
-        setStorageWarn("Fotoğraflar kaydedilirken bir hata oluştu.");
+        setStorageWarn(t("gallery.storageErrorGeneric"));
       }
       return false;
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     persist(images);
@@ -98,12 +107,25 @@ export default function Gallery() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    setIsCompressing(true);
     try {
-      const newOnes = await Promise.all(Array.from(files).map(readFileAsDataURL));
+      const tasks = Array.from(files).map(async (file) => {
+        try {
+          const img = await readAndCompressFile(file);
+          return { ...img, caption: t("generic.newMemoryCaption") };
+        } catch {
+          return null;
+        }
+      });
+      const results = await Promise.all(tasks);
+      const newOnes = results.filter((x): x is GalleryImage => x !== null);
+      if (newOnes.length === 0) {
+        setStorageWarn(t("gallery.errorAllFailed"));
+        return;
+      }
       setImages((prev) => [...newOnes, ...prev]);
-    } catch {
-      setStorageWarn("Bazı dosyalar okunamadı, lütfen tekrar deneyin.");
     } finally {
+      setIsCompressing(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -126,19 +148,19 @@ export default function Gallery() {
             <Images className="w-6 h-6 text-rose-500" />
             <div className="w-12 h-[2px] bg-gradient-to-l from-transparent to-rose-300" />
           </div>
-          <h2 className="section-title">Anılar Galerisi</h2>
+          <h2 className="section-title">{t("gallery.sectionTitle")}</h2>
           <p className="section-subtitle">
-            Her fotoğraf, bir his ve bir hatıra...
+            {t("gallery.sectionSubtitle")}
           </p>
 
           <div className="flex flex-wrap gap-3 justify-center mt-2">
             <button onClick={openUpload} className="btn-outline-romantic flex items-center gap-2">
               <Plus className="w-4 h-4" />
-              Fotoğraf Ekle
+              {t("gallery.addPhoto")}
             </button>
-            <button onClick={resetGallery} className="btn-outline-romantic flex items-center gap-2" title="Varsayılan fotoğraflara geri döner">
+            <button onClick={resetGallery} className="btn-outline-romantic flex items-center gap-2" title={t("about.resetPhoto")}>
               <RotateCcw className="w-4 h-4" />
-              Sıfırla
+              {t("gallery.reset")}
             </button>
             <input
               ref={fileRef}
@@ -158,9 +180,34 @@ export default function Gallery() {
           {!storageWarn && savedAt && (
             <div className="max-w-xl mx-auto mt-4 p-3 rounded-2xl bg-lavender-50/80 dark:bg-midnight-300/50 border border-lavender-200 dark:border-lavender-500/30 flex items-center justify-center gap-2 text-sm text-lavender-700 dark:text-lavender-200">
               <Save className="w-4 h-4" />
-              <span>Son kayıt: {savedAt.toLocaleTimeString("tr-TR")} (Her 30 sn'de bir otomatik kaydedilir)</span>
+              <span>{t("gallery.lastSaved")} {savedAt.toLocaleTimeString(locale)} {t("gallery.autosave30s")}</span>
             </div>
           )}
+
+          <div className="max-w-xl mx-auto mt-4">
+            <div className="flex items-center justify-between mb-1.5 text-xs text-lavender-600 dark:text-lavender-300">
+              <div className="flex items-center gap-1.5">
+                <HardDrive className="w-3.5 h-3.5" />
+                <span>{t("gallery.storageBarLabel", { galSize: formatBytes(galleryBytes), total: formatBytes(totalUsedBytes) })}</span>
+              </div>
+              {isCompressing && (
+                <span className="inline-flex items-center gap-1 text-rose-500 dark:text-rose-300 font-medium">
+                  <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                  {t("gallery.compressing")}
+                </span>
+              )}
+            </div>
+            <div className="w-full h-2 rounded-full bg-lavender-100/60 dark:bg-midnight-200/40 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ease-out ${
+                  usedPct >= 90 ? "bg-gradient-to-r from-rose-500 to-red-500" :
+                  usedPct >= 70 ? "bg-gradient-to-r from-amber-400 to-orange-500" :
+                  "bg-gradient-to-r from-rose-400 to-lavender-500"
+                }`}
+                style={{ width: `${usedPct}%` }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
@@ -182,7 +229,7 @@ export default function Gallery() {
                   removeAt(idx);
                 }}
                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-110 duration-300 shadow-md"
-                title="Fotoğrafı kaldır"
+                title={`${t("gallery.reset")} ❌`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -196,8 +243,8 @@ export default function Gallery() {
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-200 to-lavender-200 dark:from-rose-500/40 dark:to-lavender-600/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
               <Camera className="w-7 h-7 text-rose-500 dark:text-rose-100" />
             </div>
-            <p className="font-display text-rose-600 dark:text-rose-100 font-medium">Fotoğraf Ekle</p>
-            <p className="font-body text-xs text-blush-500 dark:text-lavender-200 mt-1">Yeni anılar oluştur</p>
+            <p className="font-display text-rose-600 dark:text-rose-100 font-medium">{t("gallery.addPhoto")}</p>
+            <p className="font-body text-xs text-blush-500 dark:text-lavender-200 mt-1">{t("gallery.uploadNewMemory")}</p>
           </button>
         </div>
       </div>

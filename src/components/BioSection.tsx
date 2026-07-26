@@ -1,19 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Camera, User, Sparkles, RotateCcw, Save } from "lucide-react";
 import { siteConfig } from "@/config";
+import { compressImage, formatBytes } from "@/lib/compressImage";
+import { useLanguage } from "@/i18n";
 
 const BIO_PHOTO_KEY_1 = "kands_bio_photo_1_v1";
 const BIO_PHOTO_KEY_2 = "kands_bio_photo_2_v1";
 const AUTOSAVE_INTERVAL_MS = 30_000;
-
-function readFileAsDataURL(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => resolve(ev.target?.result as string);
-    reader.onerror = () => reject(new Error("Dosya okunamadı"));
-    reader.readAsDataURL(file);
-  });
-}
 
 interface PersonProps {
   person: typeof siteConfig.person1;
@@ -23,6 +16,7 @@ interface PersonProps {
 }
 
 function PersonCard({ person, bio, side, storageKey }: PersonProps) {
+  const { t, locale } = useLanguage();
   const [photo, setPhoto] = useState<string>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -33,6 +27,7 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
   });
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<string>(photo);
 
@@ -52,13 +47,14 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
       return true;
     } catch (err) {
       if (err instanceof DOMException && (err.name === "QuotaExceededError" || err.code === 22)) {
-        setSaveError("Fotoğraf çok büyük, tarayıcı kaydedemiyor. Daha küçük bir fotoğraf deneyin.");
+        const est = data.length * 2;
+        setSaveError(t("about.errorQuota", { size: formatBytes(est) }));
       } else {
-        setSaveError("Fotoğraf kaydedilemedi.");
+        setSaveError(t("about.errorGeneric"));
       }
       return false;
     }
-  }, [storageKey, bio.defaultPhoto]);
+  }, [storageKey, bio.defaultPhoto, t]);
 
   useEffect(() => {
     persist(photo);
@@ -90,12 +86,20 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setIsCompressing(true);
+    setSaveError(null);
     try {
-      const data = await readFileAsDataURL(file);
+      const data = await compressImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.86,
+        type: "image/jpeg",
+      });
       setPhoto(data);
     } catch {
-      setSaveError("Dosya okunamadı, lütfen tekrar deneyin.");
+      setSaveError(t("generic.errorFileRead"));
     } finally {
+      setIsCompressing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -110,7 +114,7 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-rose-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
           <div className="flex items-center gap-2 text-white font-medium text-sm">
             <Camera className="w-4 h-4" />
-            <span>Fotoğrafı Değiştir</span>
+            <span>{t("about.replacePhoto")}</span>
           </div>
         </div>
         <button
@@ -119,7 +123,7 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
             resetPhoto();
           }}
           className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-white/90 dark:bg-midnight-100/90 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white dark:hover:bg-midnight-50 hover:scale-110 duration-300 shadow-md"
-          title="Varsayılan fotoğrafa geri döner"
+          title={t("about.resetPhoto")}
         >
           <RotateCcw className="w-4 h-4" />
         </button>
@@ -161,13 +165,19 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
 
         <div className="mt-5 min-h-[40px]">
           {saveError ? (
-            <div className="p-2.5 rounded-2xl bg-rose-50/80 dark:bg-midnight-300/50 border border-rose-200 dark:border-rose-400/30 text-xs text-rose-700 dark:text-rose-100 text-center">
-              ⚠️ {saveError}
+            <div className="p-2.5 rounded-2xl bg-rose-50/80 dark:bg-midnight-300/50 border border-rose-200 dark:border-rose-400/30 text-xs text-rose-700 dark:text-rose-100 text-left flex items-start gap-2">
+              <span>⚠️</span>
+              <span>{saveError}</span>
+            </div>
+          ) : isCompressing ? (
+            <div className="p-2.5 rounded-2xl bg-amber-50/80 dark:bg-midnight-300/40 border border-amber-200 dark:border-amber-400/40 flex items-center justify-center gap-1.5 text-xs text-amber-700 dark:text-amber-100">
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>{t("about.compressing")}</span>
             </div>
           ) : savedAt ? (
             <div className="p-2.5 rounded-2xl bg-lavender-50/80 dark:bg-midnight-300/40 border border-lavender-200 dark:border-lavender-500/30 flex items-center justify-center gap-1.5 text-xs text-lavender-700 dark:text-lavender-200">
               <Save className="w-3.5 h-3.5" />
-              <span>Kayıt: {savedAt.toLocaleTimeString("tr-TR")} • 30 sn'de bir</span>
+              <span>{t("about.lastSaved")} {savedAt.toLocaleTimeString(locale)} {t("about.autosave30s")}</span>
             </div>
           ) : null}
         </div>
@@ -177,6 +187,7 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
 }
 
 export default function BioSection() {
+  const { t } = useLanguage();
   return (
     <section id="hakkimizda" className="relative py-20 md:py-28 reveal-on-scroll">
       <div className="container mx-auto px-4">
@@ -186,9 +197,9 @@ export default function BioSection() {
             <User className="w-6 h-6 text-blush-500" />
             <div className="w-12 h-[2px] bg-gradient-to-l from-transparent to-blush-300" />
           </div>
-          <h2 className="section-title">Hakkımızda</h2>
+          <h2 className="section-title">{t("about.sectionTitle")}</h2>
           <p className="section-subtitle">
-            İki farklı dünyanın, tek bir kalpte buluşması...
+            {t("about.sectionSubtitle")}
           </p>
         </div>
 

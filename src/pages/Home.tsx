@@ -8,9 +8,18 @@ import Gallery from "@/components/Gallery";
 import MusicPlayer from "@/components/MusicPlayer";
 import SurpriseSection from "@/components/SurpriseSection";
 import { siteConfig } from "@/config";
+import { useLanguage } from "@/i18n";
 import { Heart } from "lucide-react";
 
 export default function Home() {
+  const { t, lang, locale } = useLanguage();
+
+  useEffect(() => {
+    try {
+      document.title = t("site.title");
+    } catch { /* ignore */ }
+  }, [t, lang]);
+
   useEffect(() => {
     const els = document.querySelectorAll(".reveal-on-scroll");
     const io = new IntersectionObserver(
@@ -26,7 +35,14 @@ export default function Home() {
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, []);
+  }, [lang, locale]);
+
+  const copyrightByLang: Record<string, string> = {
+    tr: "— Bu site, aşkımızın bir hatırası olarak sonsuza dek var olsun 💕",
+    ru: "— Пусть этот сайт существует вечно, как память о нашей любви 💕",
+    en: "— May this site live forever as a memory of our love 💕",
+    ro: "— Fie ca acest site să trăiască veșnic ca o amintire a iubirii noastre 💕",
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -54,10 +70,10 @@ export default function Home() {
               <Heart className="w-5 h-5 text-rose-500 fill-rose-300/60 animate-heart-beat" />
             </div>
             <p className="font-script text-xl text-blush-500 dark:text-lavender-200 mb-2">
-              {siteConfig.meta.footerText}
+              {t("site.footer")}
             </p>
             <p className="font-body text-xs md:text-sm text-rose-900/50 dark:text-midnight-50/50">
-              &copy; {new Date().getFullYear()} — Bu site, aşkımızın bir hatırası olarak sonsuza dek var olsun 💕
+              &copy; {new Date().getFullYear()} {copyrightByLang[lang] ?? copyrightByLang.en}
             </p>
           </div>
         </footer>

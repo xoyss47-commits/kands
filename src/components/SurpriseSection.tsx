@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heart, Gift, Sparkles, MessageCircleHeart, Flower2 } from "lucide-react";
 import { siteConfig } from "@/config";
+import { useLanguage } from "@/i18n";
 
 const icons: Record<string, React.ReactNode> = {
   hug: <Heart className="w-5 h-5" />,
@@ -51,7 +52,152 @@ function Confetti() {
   );
 }
 
+const actionMessagesByLang: Record<string, Record<string, string[]>> = {
+  tr: {
+    hug: [
+      "Sana sarıldım, çok özledim 🤗💕",
+      "Kollarım arasında seninle olmak paha biçilemez...",
+      "Bu sarılmanın içinde bütün aşkım var 💗",
+    ],
+    flower: [
+      "Sana kırmızı güller aldım 🌹💕",
+      "Güller bile gülüşünün yanında soluk kalıyor...",
+      "Her bir yaprağı 'seni seviyorum' dedi 🌹",
+    ],
+    love: [
+      "Seni seviyorum! 💖",
+      "Kalbim seninle atıyor, sonsuza dek! 💕",
+      "Seni dünyadaki her şeyden çok seviyorum! 💗",
+    ],
+  },
+  ru: {
+    hug: [
+      "Я обнял тебя, так сильно скучал 🤗💕",
+      "Быть с тобой в моих объятиях — бесценно...",
+      "В этом объятии — вся моя любовь 💗",
+    ],
+    flower: [
+      "Я купил тебе красные розы 🌹💕",
+      "Даже розы бледнеют рядом с твоей улыбкой...",
+      "Каждый лепесток сказал «я тебя люблю» 🌹",
+    ],
+    love: [
+      "Я тебя люблю! 💖",
+      "Моё сердце бьётся с тобой, вечно! 💕",
+      "Я люблю тебя больше всего на свете! 💗",
+    ],
+  },
+  en: {
+    hug: [
+      "I hugged you, missed you so much 🤗💕",
+      "Being with you in my arms is priceless...",
+      "All my love is inside this hug 💗",
+    ],
+    flower: [
+      "I got you red roses 🌹💕",
+      "Even roses fade next to your smile...",
+      "Every petal said 'I love you' 🌹",
+    ],
+    love: [
+      "I love you! 💖",
+      "My heart beats with you, forever! 💕",
+      "I love you more than anything in the world! 💗",
+    ],
+  },
+  ro: {
+    hug: [
+      "Te-am îmbrățișat, mi-e atât de dor de tine 🤗💕",
+      "Să fiu cu tine în brațele mele — nu are preț...",
+      "În această îmbrățișare este toată dragostea mea 💗",
+    ],
+    flower: [
+      "Am cumpărat trandafiri roșii pentru tine 🌹💕",
+      "Chiar și trandafirii se estompează lângă zâmbetul tău...",
+      "Fiecare petal a spus «te iubesc» 🌹",
+    ],
+    love: [
+      "Te iubesc! 💖",
+      "Inima mea bate cu a ta, pentru totdeauna! 💕",
+      "Te iubesc mai mult decât orice în lume! 💗",
+    ],
+  },
+};
+
+const surpriseUILabels: Record<string, {
+  introTitle: string;
+  introBody: string;
+  readyTitle: string;
+  readyBody: string;
+  callToAction: string;
+  scrollTopButton: string;
+  totalMsg1: string;
+  totalMsg2: string;
+  totalMsg3: string;
+  fallbackMsg: string;
+}> = {
+  tr: {
+    introTitle: "Sevgilim, sana özel bir mektubum var",
+    introBody:
+      "Kalbimden kaleme alınan bu sözleri görmek için,\n sadece kalbinden dokun... 💕",
+    readyTitle: "Mektup hazır...",
+    readyBody: "Şimdi onu açmaya hazır mısın?",
+    callToAction: "Şimdi bana bir iyilik yap 👇",
+    scrollTopButton: "Başa Dön ve Hikayemizi Tekrar Oku",
+    totalMsg1: "Seni {n} kere daha çok sevdim! 💖",
+    totalMsg2: "Kalbime {n} tane daha sevgi ekledim 💕",
+    totalMsg3: "Sevgim kat ve kat arttı 💗",
+    fallbackMsg: "Seni çok seviyorum 💕",
+  },
+  ru: {
+    introTitle: "Моё любимое, у меня для тебя особое письмо",
+    introBody:
+      "Чтобы увидеть эти слова, написанные от сердца,\n просто коснись своим сердцем... 💕",
+    readyTitle: "Письмо готово...",
+    readyBody: "Теперь ты готова его открыть?",
+    callToAction: "Теперь сделай мне одолжение 👇",
+    scrollTopButton: "Вернуться наверх и перечитать нашу историю",
+    totalMsg1: "Я полюбил тебя ещё {n} раз сильнее! 💖",
+    totalMsg2: "Я добавил ещё {n} порций любви в моё сердце 💕",
+    totalMsg3: "Моя любовь стала в разы сильнее 💗",
+    fallbackMsg: "Я очень сильно тебя люблю 💕",
+  },
+  en: {
+    introTitle: "My love, I have a special letter for you",
+    introBody:
+      "To see these words written from my heart,\n just touch with your heart... 💕",
+    readyTitle: "The letter is ready...",
+    readyBody: "Are you ready to open it now?",
+    callToAction: "Now do me a favour 👇",
+    scrollTopButton: "Back to Top and Read Our Story Again",
+    totalMsg1: "I loved you {n} times even more! 💖",
+    totalMsg2: "I added {n} more loves to my heart 💕",
+    totalMsg3: "My love grew many times over 💗",
+    fallbackMsg: "I love you so much 💕",
+  },
+  ro: {
+    introTitle: "Iubirea mea, am o scrisoare specială pentru tine",
+    introBody:
+      "Ca să vezi aceste cuvinte scrise din inimă,\n atinge pur și simplu cu inima ta... 💕",
+    readyTitle: "Scrisoarea este gata...",
+    readyBody: "Ești gata să o deschizi acum?",
+    callToAction: "Acum fă-mi o favoare 👇",
+    scrollTopButton: "Înapoi Sus și Citește Din Nou Povestea Noastră",
+    totalMsg1: "Te-am iubit cu {n} ori mai mult! 💖",
+    totalMsg2: "Am adăugat încă {n} iubiri în inima mea 💕",
+    totalMsg3: "Dragostea mea a crescut de multe ori 💗",
+    fallbackMsg: "Te iubesc foarte mult 💕",
+  },
+};
+
+function formatMsg(template: string, n: number): string {
+  return template.split("{n}").join(String(n));
+}
+
 export default function SurpriseSection() {
+  const { t, lang } = useLanguage();
+  const labels = surpriseUILabels[lang] ?? surpriseUILabels.en;
+  const msgBank = actionMessagesByLang[lang] ?? actionMessagesByLang.en;
+
   const [unlocked, setUnlocked] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [confetti, setConfetti] = useState(false);
@@ -63,24 +209,7 @@ export default function SurpriseSection() {
     setConfetti(true);
     setTimeout(() => setConfetti(false), 4500);
 
-    const messages: Record<string, string[]> = {
-      hug: [
-        "Sana sarıldım, çok özledim 🤗💕",
-        "Kollarım arasında seninle olmak paha biçilemez...",
-        "Bu sarılmanın içinde bütün aşkım var 💗",
-      ],
-      flower: [
-        "Sana kırmızı güller aldım 🌹💕",
-        "Güller bile gülüşünün yanında soluk kalıyor...",
-        "Her bir yaprağı 'seni seviyorum' dedi 🌹",
-      ],
-      love: [
-        "Seni seviyorum! 💖",
-        "Kalbim seninle atıyor, sonsuza dek! 💕",
-        "Seni dünyadaki her şeyden çok seviyorum! 💗",
-      ],
-    };
-    const list = messages[action] || ["Seni çok seviyorum 💕"];
+    const list = msgBank[action] || [labels.fallbackMsg];
     setToast(list[Math.floor(Math.random() * list.length)]);
     setTimeout(() => setToast(null), 3500);
   };
@@ -106,9 +235,9 @@ export default function SurpriseSection() {
             <Gift className="w-6 h-6 text-lavender-500 animate-heart-beat" />
             <div className="w-12 h-[2px] bg-gradient-to-l from-transparent to-lavender-300" />
           </div>
-          <h2 className="section-title">Sana Sürprizim 💌</h2>
+          <h2 className="section-title">{t("surprise.sectionTitle")}</h2>
           <p className="section-subtitle">
-            Kalbimden sana, en özel sözlerim...
+            {t("surprise.sectionSubtitle")}
           </p>
         </div>
 
@@ -121,12 +250,17 @@ export default function SurpriseSection() {
               <div className="relative">
                 <div className="text-7xl md:text-8xl mb-8 inline-block animate-heart-beat">💝</div>
                 <p className="font-display text-xl md:text-2xl text-rose-700 dark:text-rose-100 mb-2">
-                  Sevgilim, sana özel bir mektubum var
+                  {t("surprise.letterTitle")}
                 </p>
                 <p className="font-body text-rose-900/70 dark:text-midnight-50/80 mb-8">
-                  Kalbimden kaleme alınan bu sözleri görmek için,
-                  <br className="hidden md:block" />
-                  sadece kalbinden dokun... 💕
+                  {labels.introBody.split("\n").map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      {i < labels.introBody.split("\n").length - 1 && (
+                        <br className="hidden md:block" />
+                      )}
+                    </span>
+                  ))}
                 </p>
 
                 <button
@@ -160,10 +294,10 @@ export default function SurpriseSection() {
                   <div className="text-center py-10">
                     <div className="text-6xl mb-6 inline-block animate-float">💌</div>
                     <h3 className="font-display text-2xl md:text-3xl text-rose-700 dark:text-rose-100 mb-4">
-                      Mektup hazır...
+                      {labels.readyTitle}
                     </h3>
                     <p className="font-body text-rose-900/70 dark:text-midnight-50/80 mb-8">
-                      Şimdi onu açmaya hazır mısın?
+                      {labels.readyBody}
                     </p>
                     <button
                       onClick={() => {
@@ -215,7 +349,7 @@ export default function SurpriseSection() {
 
                     <div>
                       <p className="text-center font-script text-xl md:text-2xl text-rose-500 dark:text-rose-200 mb-6">
-                        Şimdi bana bir iyilik yap 👇
+                        {labels.callToAction}
                       </p>
                       <div className="flex flex-wrap gap-3 justify-center mb-8">
                         {siteConfig.surpriseLoveLetter.finalActions.map((a) => (
@@ -242,10 +376,10 @@ export default function SurpriseSection() {
                           <div className="inline-block glass-card px-5 py-3 romantic-shadow">
                             <p className="font-script text-lg md:text-xl text-gradient-romantic">
                               {totalActions >= 10
-                                ? `Seni ${totalActions} kere daha çok sevdim! 💖`
+                                ? formatMsg(labels.totalMsg1, totalActions)
                                 : totalActions >= 5
-                                ? `Kalbime ${totalActions} tane daha sevgi ekledim 💕`
-                                : `Sevgim kat ve kat arttı 💗`}
+                                ? formatMsg(labels.totalMsg2, totalActions)
+                                : labels.totalMsg3}
                             </p>
                           </div>
                         </div>
@@ -260,7 +394,7 @@ export default function SurpriseSection() {
                         className="btn-outline-romantic flex items-center gap-2 mx-auto"
                       >
                         <Sparkles className="w-4 h-4" />
-                        Başa Dön ve Hikayemizi Tekrar Oku
+                        {labels.scrollTopButton}
                       </button>
                     </div>
                   </div>

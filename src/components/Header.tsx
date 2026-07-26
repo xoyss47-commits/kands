@@ -1,21 +1,25 @@
-import { useEffect, useState } from "react";
-import { Heart, Menu, X, Calendar, Users, BookOpen, Images, Gift, ArrowDown, Sun, Moon, Music2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Heart, Menu, X, Calendar, Users, BookOpen, Images, Gift, ArrowDown, Sun, Moon, Music2, Globe, Check } from "lucide-react";
 import { siteConfig } from "@/config";
 import { useTheme } from "@/hooks/useTheme";
+import { useLanguage } from "@/i18n";
 
-const navItems = [
-  { id: "sayac", label: "Sayaç", icon: Calendar },
-  { id: "hakkimizda", label: "Biz", icon: Users },
-  { id: "hikaye", label: "Hikaye", icon: BookOpen },
-  { id: "galeri", label: "Galeri", icon: Images },
-  { id: "sarkimiz", label: "Şarkımız", icon: Music2 },
-  { id: "surpriz", label: "Sürpriz", icon: Gift },
+const navItems: { id: string; labelKey: Parameters<ReturnType<typeof useLanguage>["t"]>[0]; icon: typeof Calendar }[] = [
+  { id: "sayac", labelKey: "nav.counter", icon: Calendar },
+  { id: "hakkimizda", labelKey: "nav.about", icon: Users },
+  { id: "hikaye", labelKey: "nav.story", icon: BookOpen },
+  { id: "galeri", labelKey: "nav.gallery", icon: Images },
+  { id: "sarkimiz", labelKey: "nav.song", icon: Music2 },
+  { id: "surpriz", labelKey: "nav.surprise", icon: Gift },
 ];
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const { theme, toggleTheme, isDark } = useTheme();
+  const { t, lang, available, setLanguage } = useLanguage();
+  const langRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -23,11 +27,26 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
   const scrollTo = (id: string) => {
     setMenuOpen(false);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const p1n = siteConfig.person1.name.split(" ")[0];
+  const p2n = siteConfig.person2.name.split(" ")[0];
+
+  const currentLangInfo = available.find((l) => l.code === lang) ?? available[0];
 
   return (
     <>
@@ -40,24 +59,64 @@ export default function Header() {
             : "bg-transparent"
         }`}
       >
-        <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between gap-3">
+        <div className="container mx-auto px-4 py-3 md:py-4 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+          {/* SOL - Dil Seçici (asla taşmaz, içeriği kadar yer kaplar) */}
+          <div ref={langRef} className="relative justify-self-start flex-shrink-0 z-50">
+            <button
+              onClick={() => setLangOpen((v) => !v)}
+              aria-label={t("nav.language")}
+              title={t("nav.language")}
+              className="relative w-11 h-11 rounded-full border border-rose-200 dark:border-lavender-600/60 bg-white/70 dark:bg-midnight-400/80 backdrop-blur flex items-center justify-center shadow-sm hover:scale-110 hover:bg-rose-50 dark:hover:bg-midnight-300 transition-all duration-300"
+            >
+              <Globe className="w-5 h-5 text-rose-600 dark:text-lavender-200" />
+              <span className="absolute -bottom-0.5 -right-0.5 text-[10px] leading-none bg-white dark:bg-midnight-200 rounded-full border border-rose-200 dark:border-lavender-600/60 px-1 pt-[1px] pb-[2px] shadow-sm">
+                {currentLangInfo.flag}
+              </span>
+            </button>
+            {langOpen && (
+              <div className="absolute left-0 mt-2 min-w-[10rem] rounded-2xl bg-white/95 dark:bg-midnight-200/95 backdrop-blur-xl border border-rose-100 dark:border-lavender-700/50 shadow-2xl shadow-rose-500/10 p-1.5 z-[70] animate-fade-in-up origin-top-left">
+                {available.map((l) => (
+                  <button
+                    key={l.code}
+                    onClick={() => {
+                      setLanguage(l.code);
+                      setLangOpen(false);
+                      setMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm transition-colors ${
+                      lang === l.code
+                        ? "bg-gradient-to-r from-rose-500 to-lavender-500 text-white shadow-md shadow-rose-500/30"
+                        : "text-rose-800/80 dark:text-rose-50/90 hover:bg-rose-50 dark:hover:bg-midnight-300/60"
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{l.flag}</span>
+                    <span className="flex-1">{l.name}</span>
+                    {lang === l.code && <Check className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ORTA - Logo (kalan alanın tam ortasında) */}
           <a
             href="#top"
             onClick={(e) => {
               e.preventDefault();
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 justify-self-center"
           >
             <div className="relative">
-              <Heart className="w-7 h-7 md:w-8 md:h-8 text-rose-500 fill-rose-300/70 animate-heart-beat" />
+              <Heart className="w-6 h-6 md:w-8 md:h-8 text-rose-500 fill-rose-300/70 animate-heart-beat" />
             </div>
-            <span className="font-display text-lg md:text-xl font-semibold text-gradient-romantic whitespace-nowrap">
-              {siteConfig.person1.name.split(" ")[0]} &amp; {siteConfig.person2.name.split(" ")[0]}
+            <span className="font-display text-base md:text-xl font-semibold text-gradient-romantic whitespace-nowrap">
+              {p1n} &amp; {p2n}
             </span>
           </a>
 
-          <div className="flex items-center gap-2">
+          {/* SAĞ - Nav, Tema, Menü (asla taşmaz, içeriği kadar yer kaplar) */}
+          <div className="flex items-center gap-2 justify-self-end flex-shrink-0">
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => (
                 <button
@@ -66,15 +125,15 @@ export default function Header() {
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-rose-700/80 dark:text-rose-100/90 hover:text-rose-600 dark:hover:text-rose-200 hover:bg-rose-50 dark:hover:bg-midnight-300/60 transition-all duration-300"
                 >
                   <item.icon className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey)}</span>
                 </button>
               ))}
             </nav>
 
             <button
               onClick={toggleTheme}
-              aria-label={isDark ? "Açık temaya geç" : "Koyu temaya geç"}
-              title={isDark ? "Açık tema ☀️" : "Koyu tema 🌙"}
+              aria-label={isDark ? t("nav.themeLight") : t("nav.themeDark")}
+              title={isDark ? `${t("nav.themeLight")} ☀️` : `${t("nav.themeDark")} 🌙`}
               className="relative w-11 h-11 rounded-full border border-rose-200 dark:border-lavender-600/60 bg-white/70 dark:bg-midnight-400/80 backdrop-blur flex items-center justify-center text-rose-600 dark:text-lavender-200 shadow-sm hover:scale-110 hover:bg-rose-50 dark:hover:bg-midnight-300 transition-all duration-300 overflow-hidden"
             >
               <Sun
@@ -101,17 +160,45 @@ export default function Header() {
 
         {menuOpen && (
           <div className="md:hidden bg-white/90 dark:bg-midnight-400/90 backdrop-blur-lg border-t border-rose-100/80 dark:border-lavender-700/50 animate-fade-in-up">
-            <div className="container mx-auto px-4 py-3 grid grid-cols-2 gap-2">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => scrollTo(item.id)}
-                  className="flex items-center gap-2 px-4 py-3 rounded-2xl text-rose-700 dark:text-rose-100 bg-rose-50/60 dark:bg-midnight-300/60 hover:bg-rose-100 dark:hover:bg-midnight-200/70 transition-colors"
-                >
-                  <item.icon className="w-4 h-4 text-rose-500 dark:text-rose-300" />
-                  <span className="font-medium text-sm">{item.label}</span>
-                </button>
-              ))}
+            <div className="container mx-auto px-4 py-3">
+              {/* Mobil menü içinde dil seçici */}
+              <div className="mb-3 p-2 rounded-2xl bg-rose-50/60 dark:bg-midnight-300/60 border border-rose-100 dark:border-lavender-700/40">
+                <p className="font-body text-xs uppercase tracking-wider text-rose-600 dark:text-lavender-300 px-2 pt-1 pb-2 font-medium">
+                  🌐 {t("nav.language")}
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {available.map((l) => (
+                    <button
+                      key={l.code}
+                      onClick={() => {
+                        setLanguage(l.code);
+                        setMenuOpen(false);
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors ${
+                        lang === l.code
+                          ? "bg-gradient-to-r from-rose-500 to-lavender-500 text-white shadow-md shadow-rose-500/30"
+                          : "bg-white/80 dark:bg-midnight-200/80 text-rose-700 dark:text-rose-100 hover:bg-white dark:hover:bg-midnight-100"
+                      }`}
+                    >
+                      <span className="text-base leading-none">{l.flag}</span>
+                      <span className="font-medium text-xs truncate">{l.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {navItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollTo(item.id)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-2xl text-rose-700 dark:text-rose-100 bg-rose-50/60 dark:bg-midnight-300/60 hover:bg-rose-100 dark:hover:bg-midnight-200/70 transition-colors"
+                  >
+                    <item.icon className="w-4 h-4 text-rose-500 dark:text-rose-300" />
+                    <span className="font-medium text-sm">{t(item.labelKey)}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -129,7 +216,7 @@ export default function Header() {
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/60 dark:bg-midnight-400/60 backdrop-blur-md border border-white/80 dark:border-lavender-700/50 mb-8 animate-fade-in">
             <Heart className="w-4 h-4 text-rose-500 fill-rose-300 animate-heart-beat" />
             <span className="font-body text-sm text-rose-600 dark:text-lavender-200 font-medium tracking-wide uppercase">
-              {siteConfig.meta.siteTitle}
+              {t("site.title")}
             </span>
           </div>
 
@@ -137,32 +224,25 @@ export default function Header() {
             className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold mb-6 leading-tight animate-fade-in-up"
             style={{ animationDelay: "0.15s" }}
           >
-            <span className="block text-gradient-romantic">
-              {siteConfig.person1.name.split(" ")[0]}
-            </span>
+            <span className="block text-gradient-romantic">{p1n}</span>
             <span className="inline-block mx-3 md:mx-5 text-4xl md:text-6xl align-middle animate-heart-beat">
               💕
             </span>
-            <span className="block text-gradient-romantic">
-              {siteConfig.person2.name.split(" ")[0]}
-            </span>
+            <span className="block text-gradient-romantic">{p2n}</span>
           </h1>
 
           <p
             className="font-script text-2xl md:text-4xl text-blush-500 dark:text-lavender-200 mb-4 animate-fade-in-up"
             style={{ animationDelay: "0.35s" }}
           >
-            {siteConfig.meta.heroQuote}
+            {t("hero.quote")}
           </p>
 
           <p
             className="font-body text-base md:text-lg text-rose-900/70 dark:text-midnight-50/80 max-w-2xl mx-auto mb-12 animate-fade-in-up"
             style={{ animationDelay: "0.5s" }}
           >
-            Bu site, sana sevgimin ne kadar büyük olduğunu hatırlatmak için,
-            kalbim seninle attığı her saniye için hazırlandı.
-            <br className="hidden md:block" />
-            Hadi birlikte hikayemizi yeniden yaşayalım 💕
+            {t("hero.description")}
           </p>
 
           <div
@@ -171,21 +251,21 @@ export default function Header() {
           >
             <button onClick={() => scrollTo("sayac")} className="btn-romantic flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Hikayemize Başla
+              {t("hero.ctaStory")}
             </button>
             <button onClick={() => scrollTo("surpriz")} className="btn-outline-romantic flex items-center gap-2">
               <Gift className="w-4 h-4" />
-              Sana Sürprizim Var
+              {t("hero.ctaSurprise")}
             </button>
           </div>
 
           <button
             onClick={() => scrollTo("sayac")}
             className="inline-flex flex-col items-center gap-2 group animate-float"
-            aria-label="Aşağı in"
+            aria-label={t("hero.scrollDown")}
           >
             <span className="font-body text-xs uppercase tracking-[0.2em] text-rose-400 dark:text-lavender-300 group-hover:text-rose-600 dark:group-hover:text-lavender-100 transition-colors">
-              Aşağı kaydır
+              {t("hero.scrollDown")}
             </span>
             <div className="w-10 h-10 rounded-full border-2 border-rose-300 dark:border-lavender-400/70 flex items-center justify-center group-hover:bg-rose-50 dark:group-hover:bg-midnight-300/60 transition-colors">
               <ArrowDown className="w-4 h-4 text-rose-500 dark:text-lavender-300 animate-bounce" />

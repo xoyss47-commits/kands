@@ -1,5 +1,6 @@
 import { Heart, Star, Coffee, CircleDot, Sparkles, Plane, Home, Gift, BookOpen } from "lucide-react";
 import { siteConfig, type TimelineEvent } from "@/config";
+import { useLanguage } from "@/i18n";
 
 const iconMap: Record<TimelineEvent["icon"], React.ReactNode> = {
   heart: <Heart className="w-5 h-5" />,
@@ -12,7 +13,15 @@ const iconMap: Record<TimelineEvent["icon"], React.ReactNode> = {
   gift: <Gift className="w-5 h-5" />,
 };
 
+const timelineEnd: Record<string, string> = {
+  tr: "...ve hikayemiz devam ediyor 💕",
+  ru: "...и наша история продолжается 💕",
+  en: "...and our story continues 💕",
+  ro: "...și povestea noastră continuă 💕",
+};
+
 export default function Timeline() {
+  const { t, lang } = useLanguage();
   return (
     <section id="hikaye" className="relative py-20 md:py-28 reveal-on-scroll">
       <div className="container mx-auto px-4">
@@ -22,9 +31,9 @@ export default function Timeline() {
             <BookOpen className="w-6 h-6 text-lavender-500" />
             <div className="w-12 h-[2px] bg-gradient-to-l from-transparent to-lavender-300" />
           </div>
-          <h2 className="section-title">Bizim Hikayemiz</h2>
+          <h2 className="section-title">{t("timeline.sectionTitle")}</h2>
           <p className="section-subtitle">
-            Bir kahve sohbetinden, ömür boyu sürecek bir masala...
+            {t("timeline.sectionSubtitle")}
           </p>
         </div>
 
@@ -73,7 +82,7 @@ export default function Timeline() {
 
         <div className="text-center mt-20">
           <p className="font-script text-2xl md:text-3xl text-gradient-romantic">
-            ...ve hikayemiz devam ediyor 💕
+            {timelineEnd[lang] ?? timelineEnd.en}
           </p>
         </div>
       </div>
