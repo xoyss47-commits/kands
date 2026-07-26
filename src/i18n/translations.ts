@@ -88,7 +88,13 @@ export type TranslationKey =
   | "actions.loveMessage"
 
   | "generic.newMemoryCaption"
-  | "generic.errorFileRead";
+  | "generic.errorFileRead"
+
+  | "data.exportAll"
+  | "data.importAll"
+  | "data.exportedFilename"
+  | "data.importSuccess"
+  | "data.importError";
 
 export type TranslationDict = Record<LanguageCode, Record<TranslationKey, string>>;
 
@@ -186,6 +192,12 @@ export const translations: TranslationDict = {
 
     "generic.newMemoryCaption": "Yeni anımız 💕",
     "generic.errorFileRead": "Dosya okunamadı, lütfen tekrar deneyin.",
+
+    "data.exportAll": "💾 Fotoğrafları Dışa Aktar",
+    "data.importAll": "📂 Fotoğrafları İçe Aktar",
+    "data.exportedFilename": "kands-fotograflar-yedek.json",
+    "data.importSuccess": "✅ Fotoğraflar başarıyla yüklendi!",
+    "data.importError": "❌ Dosya okunamadı, geçerli bir yedek dosyası seçin.",
   },
 
   ru: {
@@ -281,6 +293,12 @@ export const translations: TranslationDict = {
 
     "generic.newMemoryCaption": "Наше новое мгновение 💕",
     "generic.errorFileRead": "Не удалось прочитать файл, пожалуйста, попробуй ещё раз.",
+
+    "data.exportAll": "💾 Экспорт фото",
+    "data.importAll": "📂 Импорт фото",
+    "data.exportedFilename": "kands-foto-rezerv.json",
+    "data.importSuccess": "✅ Фото успешно загружены!",
+    "data.importError": "❌ Не удалось прочитать файл, выбери правильную резервную копию.",
   },
 
   en: {
@@ -376,6 +394,12 @@ export const translations: TranslationDict = {
 
     "generic.newMemoryCaption": "Our new memory 💕",
     "generic.errorFileRead": "File could not be read, please try again.",
+
+    "data.exportAll": "💾 Export Photos",
+    "data.importAll": "📂 Import Photos",
+    "data.exportedFilename": "kands-photos-backup.json",
+    "data.importSuccess": "✅ Photos loaded successfully!",
+    "data.importError": "❌ Could not read file, please select a valid backup file.",
   },
 
   ro: {
@@ -471,5 +495,11 @@ export const translations: TranslationDict = {
 
     "generic.newMemoryCaption": "Noua noastră amintire 💕",
     "generic.errorFileRead": "Fișierul nu a putut fi citit, te rog, încearcă din nou.",
+
+    "data.exportAll": "💾 Exportă Poze",
+    "data.importAll": "📂 Importă Poze",
+    "data.exportedFilename": "kands-poze-backup.json",
+    "data.importSuccess": "✅ Pozele au fost încărcate cu succes!",
+    "data.importError": "❌ Nu s-a putut citi fișierul, selectează o copie de rezervă validă.",
   },
 };

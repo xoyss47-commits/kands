@@ -106,6 +106,17 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
 
   const resetPhoto = () => setPhoto(bio.defaultPhoto);
 
+  useEffect(() => {
+    const onImported = () => {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        setPhoto(saved && saved.startsWith("data:image") ? saved : bio.defaultPhoto);
+      } catch {}
+    };
+    window.addEventListener("kands:backup-imported", onImported);
+    return () => window.removeEventListener("kands:backup-imported", onImported);
+  }, [storageKey, bio.defaultPhoto]);
+
   return (
     <div className={`glass-card romantic-shadow p-6 md:p-8 ${side === "right" ? "md:mt-10" : ""}`}>
       <div className="photo-upload-zone group mx-auto mb-6 max-w-xs">

@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import { Images, Plus, X, ChevronLeft, ChevronRight, Camera, RotateCcw, Info, Save, HardDrive } from "lucide-react";
+import { Images, Plus, X, ChevronLeft, ChevronRight, Camera, RotateCcw, Info, Save, HardDrive, Download, Upload } from "lucide-react";
 import { siteConfig, type GalleryImage } from "@/config";
 import { compressImage, formatBytes, localStorageUsedBytes } from "@/lib/compressImage";
 import { useLanguage } from "@/i18n";
+import { applyBackup, createBackup, downloadJsonFile, readJsonFile } from "@/lib/dataBackup";
 
 const GALLERY_KEY = "kands_gallery_images_v1";
 const AUTOSAVE_INTERVAL_MS = 30_000;
@@ -40,7 +41,9 @@ export default function Gallery() {
   const [storageWarn, setStorageWarn] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
   const imagesRef = useRef<GalleryImage[]>(images);
 
   useEffect(() => {
@@ -104,6 +107,37 @@ export default function Gallery() {
     setStorageWarn(null);
   };
 
+  const handleExport = () => {
+    const backup = createBackup();
+    downloadJsonFile(backup, t("data.exportedFilename"));
+    setBackupMsg(t("gallery.lastSaved") + " " + new Date().toLocaleTimeString(locale));
+    window.setTimeout(() => setBackupMsg(null), 3500);
+  };
+
+  const openImport = () => importRef.current?.click();
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const payload = await readJsonFile(file);
+    if (!payload) {
+      setBackupMsg(t("data.importError"));
+      window.setTimeout(() => setBackupMsg(null), 4000);
+      return;
+    }
+    const res = applyBackup(payload);
+    if (res.ok) {
+      setImages(loadGallery());
+      window.dispatchEvent(new CustomEvent("kands:backup-imported"));
+      setBackupMsg(t("data.importSuccess"));
+      window.setTimeout(() => setBackupMsg(null), 4000);
+    } else {
+      setBackupMsg(t("data.importError"));
+      window.setTimeout(() => setBackupMsg(null), 4000);
+    }
+    if (importRef.current) importRef.current.value = "";
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -162,6 +196,14 @@ export default function Gallery() {
               <RotateCcw className="w-4 h-4" />
               {t("gallery.reset")}
             </button>
+            <button onClick={handleExport} className="btn-outline-romantic flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              {t("data.exportAll")}
+            </button>
+            <button onClick={openImport} className="btn-outline-romantic flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              {t("data.importAll")}
+            </button>
             <input
               ref={fileRef}
               type="file"
@@ -170,7 +212,19 @@ export default function Gallery() {
               onChange={handleUpload}
               className="hidden"
             />
+            <input
+              ref={importRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImport}
+              className="hidden"
+            />
           </div>
+          {backupMsg && (
+            <div className="max-w-xl mx-auto mt-3 p-3 rounded-2xl bg-lavender-50/80 dark:bg-midnight-300/60 border border-lavender-200 dark:border-lavender-500/30 flex items-center justify-center gap-2 text-sm text-lavender-700 dark:text-lavender-200">
+              <span>{backupMsg}</span>
+            </div>
+          )}
           {storageWarn && (
             <div className="max-w-xl mx-auto mt-4 p-3 rounded-2xl bg-rose-50/80 dark:bg-midnight-300/80 border border-rose-200 dark:border-rose-400/30 flex items-start gap-2 text-sm text-rose-700 dark:text-rose-100 text-left">
               <Info className="w-5 h-5 shrink-0 mt-0.5" />
