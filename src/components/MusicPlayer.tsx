@@ -103,6 +103,10 @@ export default function MusicPlayer() {
 
   const useYouTube = !!song.youtubeVideoId;
 
+  const songTitle = t("content.song.title");
+  const songArtist = t("content.song.artist");
+  const songAlbum = t("content.song.album");
+
   useEffect(() => {
     if (useYouTube) return;
     const audio = audioRef.current;
@@ -132,7 +136,7 @@ export default function MusicPlayer() {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
-  }, [song.audioUrl, isDragging, useYouTube]);
+  }, [song.audioUrl, isDragging, useYouTube, labels.loadError]);
 
   const togglePlay = async () => {
     if (useYouTube) return;
@@ -193,8 +197,8 @@ export default function MusicPlayer() {
             <Music2 className="w-6 h-6 text-lavender-500 dark:text-lavender-300 animate-float" />
             <div className="w-12 h-[2px] bg-gradient-to-l from-transparent to-lavender-300 dark:to-lavender-500/70" />
           </div>
-          <h2 className="section-title">{t("song.sectionTitle")}</h2>
-          <p className="section-subtitle">{t("song.sectionSubtitle")}</p>
+          <h2 className="section-title">{t("content.song.sectionTitle")}</h2>
+          <p className="section-subtitle">{t("content.song.sectionSubtitle")}</p>
         </div>
 
         <div className="max-w-3xl mx-auto">
@@ -211,7 +215,7 @@ export default function MusicPlayer() {
                 >
                   <img
                     src={song.coverUrl}
-                    alt={`${song.title} ${labels.coverAlt}`}
+                    alt={`${songTitle} ${labels.coverAlt}`}
                     className="w-full h-full object-cover"
                     draggable={false}
                     onError={(e) => {
@@ -242,10 +246,10 @@ export default function MusicPlayer() {
                       {useYouTube ? labels.youtubeBadge : isPlaying ? labels.nowPlaying : labels.waiting}
                     </div>
                     <h3 className="font-display text-xl md:text-2xl font-semibold text-rose-700 dark:text-rose-100 truncate">
-                      {song.title}
+                      {songTitle}
                     </h3>
                     <p className="font-body text-sm md:text-base text-blush-600 dark:text-lavender-200/90 truncate">
-                      {song.artist} • <span className="opacity-80">{song.album}</span>
+                      {songArtist} • <span className="opacity-80">{songAlbum}</span>
                     </p>
                   </div>
 
@@ -271,7 +275,7 @@ export default function MusicPlayer() {
                       <iframe
                         className="absolute inset-0 w-full h-full"
                         src={`https://www.youtube.com/embed/${song.youtubeVideoId}?rel=0&modestbranding=1`}
-                        title={`${song.title} - ${song.artist}`}
+                        title={`${songTitle} - ${songArtist}`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                       />
@@ -342,7 +346,7 @@ export default function MusicPlayer() {
                 )}
 
                 <p className="mt-5 text-center font-script text-base md:text-lg text-lavender-500 dark:text-lavender-200/90">
-                  {t("song.note")}
+                  {t("content.song.smallNote")}
                 </p>
 
                 {loadError && (

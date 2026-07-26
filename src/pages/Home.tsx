@@ -10,9 +10,14 @@ import SurpriseSection from "@/components/SurpriseSection";
 import { siteConfig } from "@/config";
 import { useLanguage } from "@/i18n";
 import { Heart } from "lucide-react";
+import { ensureStorageVersion } from "@/lib/storageVersion";
 
 export default function Home() {
   const { t, lang, locale } = useLanguage();
+
+  useEffect(() => {
+    ensureStorageVersion();
+  }, []);
 
   useEffect(() => {
     try {

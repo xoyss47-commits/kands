@@ -43,6 +43,10 @@ export default function Timeline() {
           <div className="space-y-10 md:space-y-16">
             {siteConfig.timeline.map((event, idx) => {
               const isLeft = idx % 2 === 0;
+              const n = idx + 1;
+              const date = t(`content.tl.e${n}.date` as const);
+              const title = t(`content.tl.e${n}.title` as const);
+              const desc = t(`content.tl.e${n}.desc` as const);
               return (
                 <div key={idx} className="relative reveal-on-scroll">
                   <div className="flex flex-col md:flex-row items-start">
@@ -54,13 +58,13 @@ export default function Timeline() {
                       <div className={`glass-card romantic-shadow p-5 md:p-7 inline-block text-left w-full md:w-[92%] ${isLeft ? "md:ml-auto" : ""}`}>
                         <p className="font-script text-lg text-rose-500 dark:text-rose-300 mb-2 flex items-center gap-2">
                           <span className="inline-block w-1 h-1 rounded-full bg-rose-400 dark:bg-rose-300" />
-                          {event.date}
+                          {date}
                         </p>
                         <h3 className="font-display text-xl md:text-2xl font-semibold text-rose-700 dark:text-rose-100 mb-3">
-                          {event.title}
+                          {title}
                         </h3>
                         <p className="font-body text-sm md:text-base text-rose-900/75 dark:text-midnight-50/80 leading-relaxed">
-                          {event.description}
+                          {desc}
                         </p>
                       </div>
                     </div>

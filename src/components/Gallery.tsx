@@ -4,18 +4,32 @@ import { siteConfig, type GalleryImage } from "@/config";
 import { compressImage, formatBytes, localStorageUsedBytes } from "@/lib/compressImage";
 import { useLanguage } from "@/i18n";
 import { applyBackup, createBackup, downloadJsonFile, readJsonFile } from "@/lib/dataBackup";
+import { ensureStorageVersion } from "@/lib/storageVersion";
 
 const GALLERY_KEY = "kands_gallery_images_v1";
 const AUTOSAVE_INTERVAL_MS = 30_000;
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 
-function loadGallery(): GalleryImage[] {
+function hasUserCustomized(parsed: GalleryImage[]): boolean {
+  if (parsed.length !== siteConfig.gallery.length) return true;
+  for (let i = 0; i < parsed.length; i++) {
+    const src = parsed[i]?.src;
+    if (!src) return true;
+    if (src.startsWith("data:")) return true;
+    if (src !== siteConfig.gallery[i]?.src) return true;
+  }
+  return false;
+}
+
+function loadGalleryFromStorageOrDefaults(): GalleryImage[] {
   try {
+    ensureStorageVersion();
     const raw = localStorage.getItem(GALLERY_KEY);
     if (!raw) return siteConfig.gallery;
     const parsed = JSON.parse(raw) as GalleryImage[];
     if (!Array.isArray(parsed) || parsed.length === 0) return siteConfig.gallery;
-    return parsed;
+    if (hasUserCustomized(parsed)) return parsed;
+    return siteConfig.gallery;
   } catch {
     return siteConfig.gallery;
   }
@@ -34,9 +48,29 @@ async function readAndCompressFile(file: File): Promise<GalleryImage> {
   };
 }
 
+function resolveCaption(
+  img: GalleryImage,
+  globalIndex: number,
+  t: (key: any, vars?: any) => string,
+  defaultGallery: GalleryImage[],
+): string {
+  const defaultIdx = defaultGallery.findIndex((d) => d.src === img.src);
+  if (defaultIdx >= 0 && defaultIdx < 10) {
+    return t(`content.gallery.cap${defaultIdx + 1}` as const);
+  }
+  if (globalIndex < 10 && img.caption === siteConfig.gallery[globalIndex]?.caption) {
+    return t(`content.gallery.cap${globalIndex + 1}` as const);
+  }
+  return img.caption;
+}
+
 export default function Gallery() {
   const { t, locale } = useLanguage();
-  const [images, setImages] = useState<GalleryImage[]>(() => loadGallery());
+  const [images, setImages] = useState<GalleryImage[]>(() => siteConfig.gallery);
+
+  useEffect(() => {
+    setImages(loadGalleryFromStorageOrDefaults());
+  }, []);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [storageWarn, setStorageWarn] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -127,7 +161,7 @@ export default function Gallery() {
     }
     const res = applyBackup(payload);
     if (res.ok) {
-      setImages(loadGallery());
+      setImages(loadGalleryFromStorageOrDefaults());
       window.dispatchEvent(new CustomEvent("kands:backup-imported"));
       setBackupMsg(t("data.importSuccess"));
       window.setTimeout(() => setBackupMsg(null), 4000);
@@ -265,30 +299,33 @@ export default function Gallery() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
-          {images.map((img, idx) => (
-            <div
-              key={idx}
-              className={`gallery-item relative group ${
-                idx % 5 === 0 ? "md:row-span-2 md:col-span-1 aspect-[3/4] md:aspect-auto" : "aspect-square"
-              }`}
-              onClick={() => setLightbox(idx)}
-            >
-              <img src={img.src} alt={img.caption} loading="lazy" />
-              <div className="absolute inset-0 bg-gradient-to-t from-rose-900/80 via-rose-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4">
-                <p className="font-script text-white text-lg md:text-xl mb-2">{img.caption}</p>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeAt(idx);
-                }}
-                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-110 duration-300 shadow-md"
-                title={`${t("gallery.reset")} ❌`}
+          {images.map((img, idx) => {
+            const caption = resolveCaption(img, idx, t, siteConfig.gallery);
+            return (
+              <div
+                key={idx}
+                className={`gallery-item relative group ${
+                  idx % 5 === 0 ? "md:row-span-2 md:col-span-1 aspect-[3/4] md:aspect-auto" : "aspect-square"
+                }`}
+                onClick={() => setLightbox(idx)}
               >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+                <img src={img.src} alt={caption} loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-rose-900/80 via-rose-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4">
+                  <p className="font-script text-white text-lg md:text-xl mb-2">{caption}</p>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeAt(idx);
+                  }}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-110 duration-300 shadow-md"
+                  title={`${t("gallery.reset")} ❌`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
 
           <button
             onClick={openUpload}
@@ -321,11 +358,11 @@ export default function Gallery() {
           >
             <img
               src={images[lightbox].src}
-              alt={images[lightbox].caption}
+              alt={resolveCaption(images[lightbox], lightbox, t, siteConfig.gallery)}
               className="max-h-[78vh] max-w-full rounded-2xl shadow-2xl object-contain"
             />
             <p className="font-script text-2xl md:text-3xl text-white mt-5 text-center">
-              {images[lightbox].caption}
+              {resolveCaption(images[lightbox], lightbox, t, siteConfig.gallery)}
             </p>
             <p className="text-white/60 text-sm mt-2">
               {lightbox + 1} / {images.length}

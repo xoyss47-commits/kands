@@ -4,13 +4,18 @@ import { translations, type TranslationKey } from "./translations";
 
 export type InterpolateParams = Record<string, string | number>;
 
+export interface TFunction {
+  (key: TranslationKey, params?: InterpolateParams): string;
+  (key: string & {}, params?: InterpolateParams): string;
+}
+
 export interface LanguageContextValue {
   lang: LanguageCode;
   locale: string;
   info: LanguageInfo;
   available: LanguageInfo[];
   setLanguage: (code: LanguageCode) => void;
-  t: (key: TranslationKey, params?: InterpolateParams) => string;
+  t: TFunction;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);

@@ -3,6 +3,7 @@ import { Camera, User, Sparkles, RotateCcw, Save } from "lucide-react";
 import { siteConfig } from "@/config";
 import { compressImage, formatBytes } from "@/lib/compressImage";
 import { useLanguage } from "@/i18n";
+import { ensureStorageVersion } from "@/lib/storageVersion";
 
 const BIO_PHOTO_KEY_1 = "kands_bio_photo_1_v1";
 const BIO_PHOTO_KEY_2 = "kands_bio_photo_2_v1";
@@ -13,23 +14,35 @@ interface PersonProps {
   bio: typeof siteConfig.person1Bio;
   side: "left" | "right";
   storageKey: string;
+  personIndex: 1 | 2;
 }
 
-function PersonCard({ person, bio, side, storageKey }: PersonProps) {
+function PersonCard({ person, bio, side, storageKey, personIndex }: PersonProps) {
   const { t, locale } = useLanguage();
-  const [photo, setPhoto] = useState<string>(() => {
+  const [photo, setPhoto] = useState<string>(() => bio.defaultPhoto);
+
+  useEffect(() => {
     try {
+      ensureStorageVersion();
       const saved = localStorage.getItem(storageKey);
-      return saved && saved.startsWith("data:image") ? saved : bio.defaultPhoto;
+      if (saved && saved.startsWith("data:image")) {
+        setPhoto(saved);
+      } else {
+        setPhoto(bio.defaultPhoto);
+      }
     } catch {
-      return bio.defaultPhoto;
+      setPhoto(bio.defaultPhoto);
     }
-  });
+  }, [bio.defaultPhoto, storageKey]);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<string>(photo);
+
+  const prefix = personIndex === 1 ? "content.p1Bio" : "content.p2Bio";
+  const roleKey = personIndex === 1 ? "content.person1.role" : "content.person2.role";
+  const nickKey = personIndex === 1 ? "content.person1.nickname" : "content.person2.nickname";
 
   useEffect(() => {
     photoRef.current = photo;
@@ -117,6 +130,13 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
     return () => window.removeEventListener("kands:backup-imported", onImported);
   }, [storageKey, bio.defaultPhoto]);
 
+  const traits = [
+    t(`${prefix}.trait1` as const),
+    t(`${prefix}.trait2` as const),
+    t(`${prefix}.trait3` as const),
+    t(`${prefix}.trait4` as const),
+  ];
+
   return (
     <div className={`glass-card romantic-shadow p-6 md:p-8 ${side === "right" ? "md:mt-10" : ""}`}>
       <div className="photo-upload-zone group mx-auto mb-6 max-w-xs">
@@ -148,24 +168,24 @@ function PersonCard({ person, bio, side, storageKey }: PersonProps) {
       </div>
 
       <div className="text-center">
-        <p className="font-script text-lg text-blush-500 dark:text-lavender-300 mb-1">{person.role}</p>
+        <p className="font-script text-lg text-blush-500 dark:text-lavender-300 mb-1">{t(roleKey)}</p>
         <h3 className="font-display text-2xl md:text-3xl font-semibold text-rose-700 dark:text-rose-100 mb-1">
           {person.name}
         </h3>
         <p className="font-body text-sm text-blush-500 dark:text-lavender-300 italic mb-4">
-          &ldquo;{person.nickname}&rdquo;
+          &ldquo;{t(nickKey)}&rdquo;
         </p>
 
         <div className="h-px w-16 mx-auto bg-gradient-to-r from-transparent via-rose-300 dark:via-lavender-400 to-transparent mb-5" />
 
         <p className="font-body text-sm md:text-base text-rose-900/80 dark:text-midnight-50/85 leading-relaxed mb-6 px-2">
-          {bio.description}
+          {t(`${prefix}.desc` as const)}
         </p>
 
         <div className="flex flex-wrap gap-2 justify-center">
-          {bio.traits.map((trait) => (
+          {traits.map((trait, idx) => (
             <span
-              key={trait}
+              key={idx}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs md:text-sm font-medium bg-gradient-to-r from-rose-100 to-lavender-100 dark:from-midnight-200/60 dark:to-lavender-800/40 text-rose-600 dark:text-rose-100 border border-rose-200/60 dark:border-lavender-600/40"
             >
               <Sparkles className="w-3 h-3" />
@@ -215,8 +235,8 @@ export default function BioSection() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 md:gap-10 max-w-5xl mx-auto items-start">
-          <PersonCard person={siteConfig.person1} bio={siteConfig.person1Bio} side="left" storageKey={BIO_PHOTO_KEY_1} />
-          <PersonCard person={siteConfig.person2} bio={siteConfig.person2Bio} side="right" storageKey={BIO_PHOTO_KEY_2} />
+          <PersonCard person={siteConfig.person1} bio={siteConfig.person1Bio} side="left" storageKey={BIO_PHOTO_KEY_1} personIndex={1} />
+          <PersonCard person={siteConfig.person2} bio={siteConfig.person2Bio} side="right" storageKey={BIO_PHOTO_KEY_2} personIndex={2} />
         </div>
 
         <div className="flex justify-center mt-10 -translate-y-6">

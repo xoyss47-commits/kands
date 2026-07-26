@@ -193,6 +193,13 @@ function formatMsg(template: string, n: number): string {
   return template.split("{n}").join(String(n));
 }
 
+function resolveActionLabel(action: string, t: (k: any, v?: any) => string): string {
+  if (action === "hug") return t("content.surprise.act1");
+  if (action === "flower") return t("content.surprise.act2");
+  if (action === "love") return t("content.surprise.act3");
+  return action;
+}
+
 export default function SurpriseSection() {
   const { t, lang } = useLanguage();
   const labels = surpriseUILabels[lang] ?? surpriseUILabels.en;
@@ -204,7 +211,7 @@ export default function SurpriseSection() {
   const [actionCount, setActionCount] = useState<Record<string, number>>({});
   const [toast, setToast] = useState<string | null>(null);
 
-  const doAction = (label: string, action: string) => {
+  const doAction = (action: string) => {
     setActionCount((p) => ({ ...p, [action]: (p[action] || 0) + 1 }));
     setConfetti(true);
     setTimeout(() => setConfetti(false), 4500);
@@ -272,7 +279,7 @@ export default function SurpriseSection() {
                   className="btn-romantic flex items-center gap-2 mx-auto text-lg"
                 >
                   <Sparkles className="w-5 h-5" />
-                  {siteConfig.surpriseLoveLetter.hiddenButtonText}
+                  {t("content.surprise.hiddenBtn")}
                 </button>
               </div>
             </div>
@@ -308,7 +315,7 @@ export default function SurpriseSection() {
                       className="btn-romantic flex items-center gap-2 mx-auto text-lg"
                     >
                       <Heart className="w-5 h-5 fill-white/80" />
-                      {siteConfig.surpriseLoveLetter.revealButtonText}
+                      {t("content.surprise.revealBtn")}
                     </button>
                   </div>
                 ) : (
@@ -321,12 +328,19 @@ export default function SurpriseSection() {
                         </div>
                       </div>
                       <h3 className="font-display text-2xl md:text-4xl text-gradient-romantic font-semibold">
-                        {siteConfig.surpriseLoveLetter.title}
+                        {t("content.surprise.title")}
                       </h3>
                     </div>
 
                     <div className="space-y-5 mb-10">
-                      {siteConfig.surpriseLoveLetter.paragraphs.map((p, idx) => (
+                      {[
+                        t("content.surprise.p1"),
+                        t("content.surprise.p2"),
+                        t("content.surprise.p3"),
+                        t("content.surprise.p4"),
+                        t("content.surprise.p5"),
+                        t("content.surprise.p6"),
+                      ].map((p, idx) => (
                         <p
                           key={idx}
                           className="font-body text-base md:text-lg text-rose-900/85 dark:text-midnight-50/90 leading-relaxed"
@@ -341,7 +355,7 @@ export default function SurpriseSection() {
 
                     <div className="text-right mb-10 pr-4">
                       <p className="font-script text-2xl md:text-3xl text-rose-600 dark:text-rose-200">
-                        {siteConfig.surpriseLoveLetter.signature}
+                        {t("content.surprise.signature")}
                       </p>
                     </div>
 
@@ -352,23 +366,26 @@ export default function SurpriseSection() {
                         {labels.callToAction}
                       </p>
                       <div className="flex flex-wrap gap-3 justify-center mb-8">
-                        {siteConfig.surpriseLoveLetter.finalActions.map((a) => (
-                          <button
-                            key={a.action}
-                            onClick={() => doAction(a.label, a.action)}
-                            className={`btn-romantic flex items-center gap-2 relative ${
-                              actionCount[a.action] ? "ring-4 ring-rose-200/60" : ""
-                            }`}
-                          >
-                            {icons[a.action]}
-                            <span>{a.label}</span>
-                            {actionCount[a.action] ? (
-                              <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-rose-500 text-xs font-bold flex items-center justify-center shadow-md">
-                                {actionCount[a.action]}
-                              </span>
-                            ) : null}
-                          </button>
-                        ))}
+                        {siteConfig.surpriseLoveLetter.finalActions.map((a) => {
+                          const label = resolveActionLabel(a.action, t);
+                          return (
+                            <button
+                              key={a.action}
+                              onClick={() => doAction(a.action)}
+                              className={`btn-romantic flex items-center gap-2 relative ${
+                                actionCount[a.action] ? "ring-4 ring-rose-200/60" : ""
+                              }`}
+                            >
+                              {icons[a.action]}
+                              <span>{label}</span>
+                              {actionCount[a.action] ? (
+                                <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-rose-500 text-xs font-bold flex items-center justify-center shadow-md">
+                                  {actionCount[a.action]}
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
                       </div>
 
                       {totalActions > 0 && (
